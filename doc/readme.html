@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<HTML lang="en"><HEAD>
+<Meta CharSet="UTF-8">
+<Meta Name="viewport" Content="width=device-width, initial-scale=1.0">
+
+<TITLE>K Dimensional Tree</TITLE>
+
+<STYLE>
+ BODY {font-size: 20pt;}
+
+ P {text-indent: .5em; margin-block: .5em;}
+ H1 {text-align: center; font-size: 28pt;}
+ H2 {text-align: left; font-size: 24pt;}
+</STYLE>
+
+</HEAD><BODY>
+
+<H1>K Dimensional Tree</H1>
+
+<P>A k-d tree divides space repeatedly in order to speed up nearest neighbor search, K nearest neighbors search, and range searches (= all points in a K dimensional box, or a radius).</P> 
+
+<svg Style="float: right;" width="256" height="256" viewBox="0 0 256 256" fill="black">
+ <path d="M16,11 a 2 2 0 1 0 .1 0 M116,31 a 2 2 0 1 0 .1 0 M96,121 a 2 2 0 1 0 .1 0 M240,10 a 2 2 0 1 0 .1 0 M56,161 a 2 2 0 1 0 .1 0 M236,221 a 2 2 0 1 0 .1 0 M16,233 a 2 2 0 1 0 .1 0 M180,248 a 2 2 0 1 0 .1 0" stroke="none" stroke-width="2" fill="#000"/>
+
+ <path d="M0,128 L256,128" stroke-width="2">
+  <animate attributeName="stroke" values="white;black;black;black;black" dur="5s" repeatCount="indefinite"/>
+ </path>
+
+ <path d="M128,128 L128,256" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;red;red;red" dur="5s" repeatCount="indefinite"/>
+ </path>
+
+ <path d="M108,0 L108,128" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;blue;blue;blue" dur="5s" repeatCount="indefinite"/>
+ </path>
+
+ <path d="M108,24 L256,24" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;white;green;green" dur="5s" repeatCount="indefinite"/>
+ </path>
+
+ <path d="M128,238 L256,238" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;white;orange;orange" dur="5s" repeatCount="indefinite"/>
+ </path>
+
+ <path d="M0,192 L128,192" stroke="purple" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;white;purple;purple" dur="5s" repeatCount="indefinite" />
+ </path>
+
+ <path d="M0,64 L108,64" stroke="gray" stroke-width="2">
+  <animate attributeName="stroke" values="white;white;white;gray;gray" dur="5s" repeatCount="indefinite"/>
+ </path>
+</svg>
+
+<P>To illustrate, there are 8 points to the right. Those are split into two groups of four points by the black line. Those are split into groups of two points by the red and yellow lines. Finally, the gray, yellow, green, and purple line split those to single points.</P>
+
+<P>This is represented as a tree like this - the first split is at the root, the next two splits are it's children, etc.</P>
+
+<svg Style="display: block; margin: auto" width="320" height="232" viewBox="0 0 320 232">
+ <style>
+  circle {fill: lightgrey;}
+  text {text-anchor: middle; dominant-baseline: middle;}
+ </style>
+
+ <path d="M160,34 L80,96 40,158 20,212 M40,158 L60,212 M80,96 L120,158 100,212 M120,158 L140,212 M160,34 L240,96 200,158 184,212 M200,158 L228,212 M240,96 L280,158 268,212 M280,158 L304,212" fill="none" stroke="black" stroke-width="3"/>
+
+ <g font-size="11pt">
+  <circle cx="160" cy="34" r="26" fill="none" stroke="black" stroke-width="3"/>
+  <text transform="translate(160,34)">y=128</text>
+
+  <circle cx="80" cy="96" r="26" fill="none" stroke="red" stroke-width="3"/>
+  <text transform="translate(80,96)">x=128</text>
+
+  <circle cx="240" cy="96" r="26" fill="none" stroke="blue" stroke-width="3"/>
+  <text transform="translate(240,96)">x=108</text>
+
+  <circle cx="40" cy="158" r="26" fill="none" stroke="gray" stroke-width="3"/>
+  <text transform="translate(40,158)">y=64</text>
+
+  <circle cx="120" cy="158" r="26" fill="none" stroke="purple" stroke-width="3"/>
+  <text transform="translate(120,158)">y=192</text>
+
+  <circle cx="200" cy="158" r="26" fill="none" stroke="orange" stroke-width="3"/>
+  <text transform="translate(200,158)">y=238</text>
+
+  <circle cx="280" cy="158" r="26" fill="none" stroke="green" stroke-width="3"/>
+  <text transform="translate(280,158)">y=24</text>
+ </g>
+
+ <g font-size="9pt">
+  <text transform="translate(20,220)">16,13</text>
+  <text transform="translate(60,220)">96,123</text>
+  <text transform="translate(100,220)">16,235</text>
+  <text transform="translate(140,220)">56,163</text>
+  <text transform="translate(184,220)">180,250</text>
+  <text transform="translate(228,220)">236,223</text>
+  <text transform="translate(268,220)">116,43</text>
+  <text transform="translate(304,220)">240,12</text>
+ </g>
+</svg>
+
+<P>This implementation divides space in repeating order on the x, y, and then y axis, similar to the illustration above. There are alternatives, such as splitting along the axis with the widest distribution of points. In this case, a tree with points being the stars in the galaxy wouldn't be split along the height of the galaxy as often as along its height and width.</P>
+
+<P>Using a tree quickly narrows down the set of points the code needs to look at, which is why it is faster than scanning all the points in a large set. On the other hand, it is a textbook example of pointer chasing, which leads to cache misses, branch mispredictions, and serialization (go down the tree node by node). This is ameliorated by having leaf nodes hold a group of points in a contiguous container, and iterating over the container to look for a nearest neighbor, etc.</P>
+
+<P>This requires striking a balance between two evils - brute force searches in contiguous containers, and pointer chasing in the tree. For my laptop and test cases, a leaf of ~100 points works fastest. Your mileage may vary based on DRAM performance & timing parameters, tree size, queries, etc.</P>
+
+<H2>K-D Tree API</H2>
+
+<P><U>Constructors</U>: default (empty tree), move, and from an array of K-D points (read: std::array of K floats).</P>
+
+<P><U>insert</U>: clears a tree, and inserts an array of K-D points.</P>
+
+<P><U>pointsInBox</U>: accepts a K-D box (two arrays, one of min axis values, another of max), and returns all the points in the tree within the box.</P>
+
+<P><U>nearestNeighbor</U>: accepts a point, and returns the closes point to it in the tree.</P>
+
+<P><U>KNearestNeighbors</U>: accepts a point, and returns the K closest points to it in the tree.</P>
+
+<P><U>boundingBox</U>: returns the K-D tree's bounding box.</P>
+
+<P><U>nodeCount</U>: returns the number of nodes in the tree.</P>
+
+<P><U>getNumPoints</U>: returns the number of points in the tree.</P>
+
+<P><U>TreeHeight</U>: returns the tree's height.</P>
+
+<P><U>PrintTree</U>: prints the tree.</P>
+
+</BODY></HTML>
